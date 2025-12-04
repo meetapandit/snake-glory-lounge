@@ -12,7 +12,7 @@ from app.routers.auth import get_current_user
 router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 
 
-@router.get("/", response_model=List[LeaderboardEntry])
+@router.get("", response_model=List[LeaderboardEntry])
 async def get_leaderboard_endpoint(
     mode: Optional[GameMode] = None,
     db: Session = Depends(get_db)
@@ -31,7 +31,7 @@ async def get_leaderboard_endpoint(
     return [leaderboard_model_to_pydantic(entry) for entry in entries]
 
 
-@router.post("/", response_model=bool)
+@router.post("", response_model=bool)
 async def submit_score(
     request: SubmitScoreRequest,
     user = Depends(get_current_user),

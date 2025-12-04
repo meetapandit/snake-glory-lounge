@@ -284,93 +284,11 @@ def init_db(db: Session):
     if user_count > 0:
         return  # Database already initialized
     
-    # Create mock users
-    mock_users = [
-        ("player1@test.com", "SnakeMaster", "password123"),
-        ("player2@test.com", "VenomStrike", "password123"),
-        ("player3@test.com", "CobraKing", "password123"),
-        ("player4@test.com", "PythonPro", "password123"),
-        ("player5@test.com", "Slither99", "password123"),
-        ("player6@test.com", "ViperVenom", "password123"),
-        ("player7@test.com", "Anaconda", "password123"),
-        ("player8@test.com", "RattleSnake", "password123"),
-        ("player9@test.com", "BlackMamba", "password123"),
-        ("player10@test.com", "Sidewinder", "password123"),
-    ]
+    # Seeding disabled per user request
+    pass
     
-    created_users = {}
-    for email, username, password in mock_users:
-        user = create_user(db, username, email, password)
-        created_users[username] = user
-    
-    # Create mock leaderboard entries
-    leaderboard_data = [
-        ("SnakeMaster", 2450, GameMode.WALLS, date(2024, 1, 15)),
-        ("VenomStrike", 2100, GameMode.PASS_THROUGH, date(2024, 1, 14)),
-        ("CobraKing", 1890, GameMode.WALLS, date(2024, 1, 13)),
-        ("PythonPro", 1750, GameMode.PASS_THROUGH, date(2024, 1, 12)),
-        ("Slither99", 1620, GameMode.WALLS, date(2024, 1, 11)),
-        ("ViperVenom", 1500, GameMode.PASS_THROUGH, date(2024, 1, 10)),
-        ("Anaconda", 1350, GameMode.WALLS, date(2024, 1, 9)),
-        ("RattleSnake", 1200, GameMode.PASS_THROUGH, date(2024, 1, 8)),
-        ("BlackMamba", 1100, GameMode.WALLS, date(2024, 1, 7)),
-        ("Sidewinder", 950, GameMode.PASS_THROUGH, date(2024, 1, 6)),
-        ("SnakeMaster", 2300, GameMode.PASS_THROUGH, date(2024, 1, 5)),
-        ("CobraKing", 1800, GameMode.PASS_THROUGH, date(2024, 1, 4)),
-        ("VenomStrike", 1950, GameMode.WALLS, date(2024, 1, 3)),
-        ("PythonPro", 1650, GameMode.WALLS, date(2024, 1, 2)),
-        ("Slither99", 1400, GameMode.PASS_THROUGH, date(2024, 1, 1)),
-        ("ViperVenom", 1250, GameMode.WALLS, date(2023, 12, 31)),
-        ("Anaconda", 1150, GameMode.PASS_THROUGH, date(2023, 12, 30)),
-        ("RattleSnake", 1050, GameMode.WALLS, date(2023, 12, 29)),
-        ("BlackMamba", 900, GameMode.PASS_THROUGH, date(2023, 12, 28)),
-        ("Sidewinder", 800, GameMode.WALLS, date(2023, 12, 27)),
-    ]
-    
-    for username, score, mode, entry_date in leaderboard_data:
-        user = created_users.get(username)
-        if user:
-            mode_enum = GameModeEnum(mode.value)
-            entry = LeaderboardEntryModel(
-                user_id=user.id,
-                username=username,
-                score=score,
-                mode=mode_enum,
-                created_at=datetime.combine(entry_date, datetime.min.time())
-            )
-            db.add(entry)
-    
-    # Create mock active players
-    active_players_data = [
-        ("LiveSnaker", 340, GameMode.WALLS),
-        ("ProGamer99", 520, GameMode.PASS_THROUGH),
-        ("NightCrawler", 180, GameMode.WALLS),
-        ("SpeedDemon", 720, GameMode.PASS_THROUGH),
-        ("SteelFang", 450, GameMode.WALLS),
-    ]
-    
-    # Create temporary users for active players (they might not be in the user list)
-    for username, score, mode in active_players_data:
-        # Try to find existing user or create a temporary one
-        user = created_users.get(username)
-        if not user:
-            # Create a temporary user for this active player
-            email = f"{username.lower()}@temp.com"
-            user = create_user(db, username, email, "temp123")
-        
-        game_state = generate_mock_game_state(mode, score)
-        mode_enum = GameModeEnum(mode.value)
-        
-        player = ActivePlayerModel(
-            user_id=user.id,
-            username=username,
-            score=score,
-            mode=mode_enum,
-            game_state=game_state.model_dump()
-        )
-        db.add(player)
-    
-    db.commit()
+    # Mock data generation removed to keep database clean
+    # Only real user data will be persisted
 
 
 def generate_mock_game_state(mode: GameMode, score: int) -> GameState:
