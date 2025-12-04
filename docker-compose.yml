@@ -15,8 +15,8 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build: ./backend
+  app:
+    build: .
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/snake_glory
       - SECRET_KEY=dev-secret-key-change-in-production
@@ -24,15 +24,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    networks:
-      - snake-network
-
-  frontend:
-    build: ./frontend
     ports:
       - "80:80"
-    depends_on:
-      - backend
     networks:
       - snake-network
 
