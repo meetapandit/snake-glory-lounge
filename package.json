@@ -1,0 +1,16 @@
+{
+    "name": "snake-glory-lounge",
+    "version": "1.0.0",
+    "description": "Snake Glory Lounge - Full Stack Game",
+    "scripts": {
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "dev:backend": "cd backend && make dev",
+        "dev:frontend": "cd frontend && npm run dev",
+        "test": "npm run test:backend && npm run test:frontend",
+        "test:backend": "cd backend && uv run pytest",
+        "test:frontend": "cd frontend && npm run test"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

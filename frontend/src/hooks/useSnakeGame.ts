@@ -40,6 +40,12 @@ export function useSnakeGame(initialMode: GameMode = 'walls') {
   }, []);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Ignore keyboard events when user is typing in input fields
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      return;
+    }
+
     if (e.key === ' ') {
       e.preventDefault();
       if (gameState.status === 'idle' || gameState.status === 'game-over') {
@@ -65,11 +71,11 @@ export function useSnakeGame(initialMode: GameMode = 'walls') {
     const gameLoop = (timestamp: number) => {
       if (timestamp - lastTime >= gameState.speed) {
         lastTime = timestamp;
-        
+
         const nextDirection = directionQueueRef.current.shift();
         setGameState(prev => moveSnake(prev, nextDirection));
       }
-      
+
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
 

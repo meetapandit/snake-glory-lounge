@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import api from './api';
 
 // Mock localStorage
@@ -10,84 +10,282 @@ const localStorageMock = {
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// Mock fetch
+global.fetch = vi.fn();
+
 describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.getItem.mockReturnValue(null);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('login', () => {
-    it('returns success for valid credentials', async () => {
-      const response = await api.login('player1@test.com', 'password123');
+    it('sends correct request and handles success response', async () => {
+      const mockResponse = {
+        success: true,
+        user: { id: '1', username: 'TestUser', email: 'test@test.com' }
+      };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const response = await api.login('test@test.com', 'password123');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/auth/login',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@test.com', password: 'password123' }),
+        })
+      );
+
       expect(response.success).toBe(true);
-      expect(response.user).toBeDefined();
-      expect(response.user?.username).toBe('SnakeMaster');
+      expect(response.user?.username).toBe('TestUser');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'snake_user',
+        JSON.stringify(mockResponse.user)
+      );
     });
 
-    it('returns error for invalid email', async () => {
-      const response = await api.login('invalid@test.com', 'password123');
+    it('handles login failure', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid credentials'
+      };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const response = await api.login('test@test.com', 'wrongpass');
+
       expect(response.success).toBe(false);
-      expect(response.error).toBe('User not found');
+      expect(response.error).toBe('Invalid credentials');
+      expect(localStorageMock.setItem).not.toHaveBeenCalled();
     });
 
-    it('returns error for invalid password', async () => {
-      const response = await api.login('player1@test.com', 'wrongpassword');
+    it('handles network error', async () => {
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+      const response = await api.login('test@test.com', 'password123');
+
       expect(response.success).toBe(false);
-      expect(response.error).toBe('Invalid password');
+      expect(response.error).toBe('Failed to connect to server');
     });
   });
 
   describe('signup', () => {
-    it('creates new user successfully', async () => {
-      const response = await api.signup('TestUser', 'testuser@test.com', 'password123');
+    it('sends correct request and handles success response', async () => {
+      const mockResponse = {
+        success: true,
+        user: { id: '2', username: 'NewUser', email: 'new@test.com' }
+      };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const response = await api.signup('NewUser', 'new@test.com', 'password123');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/auth/signup',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            username: 'NewUser',
+            email: 'new@test.com',
+            password: 'password123'
+          }),
+        })
+      );
+
       expect(response.success).toBe(true);
-      expect(response.user?.username).toBe('TestUser');
+      expect(localStorageMock.setItem).toHaveBeenCalled();
+    });
+  });
+
+  describe('logout', () => {
+    it('calls logout endpoint and clears localStorage', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+      });
+
+      await api.logout();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/auth/logout',
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('snake_user');
     });
 
-    it('returns error for existing email', async () => {
-      const response = await api.signup('AnotherUser', 'player1@test.com', 'password123');
-      expect(response.success).toBe(false);
-      expect(response.error).toBe('Email already registered');
+    it('clears localStorage even if request fails', async () => {
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+      await api.logout();
+
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('snake_user');
+    });
+  });
+
+  describe('getCurrentUser', () => {
+    it('fetches current user from backend', async () => {
+      const mockUser = { id: '1', username: 'TestUser', email: 'test@test.com' };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockUser,
+      });
+
+      const user = await api.getCurrentUser();
+
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/auth/me');
+      expect(user).toEqual(mockUser);
+      expect(localStorageMock.setItem).toHaveBeenCalled();
+    });
+
+    it('returns null for 401 response', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+      });
+
+      const user = await api.getCurrentUser();
+
+      expect(user).toBeNull();
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('snake_user');
     });
   });
 
   describe('getLeaderboard', () => {
-    it('returns all leaderboard entries', async () => {
+    it('fetches all leaderboard entries', async () => {
+      const mockEntries = [
+        { id: '1', username: 'Player1', score: 1000, mode: 'walls', date: '2024-01-01' },
+        { id: '2', username: 'Player2', score: 900, mode: 'pass-through', date: '2024-01-02' },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockEntries,
+      });
+
       const entries = await api.getLeaderboard();
-      expect(entries.length).toBeGreaterThan(0);
-      expect(entries[0].score).toBeGreaterThanOrEqual(entries[1].score);
+
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/leaderboard');
+      expect(entries).toEqual(mockEntries);
     });
 
     it('filters by mode', async () => {
-      const wallsEntries = await api.getLeaderboard('walls');
-      expect(wallsEntries.every(e => e.mode === 'walls')).toBe(true);
+      const mockEntries = [
+        { id: '1', username: 'Player1', score: 1000, mode: 'walls', date: '2024-01-01' },
+      ];
 
-      const passThroughEntries = await api.getLeaderboard('pass-through');
-      expect(passThroughEntries.every(e => e.mode === 'pass-through')).toBe(true);
-    });
-  });
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockEntries,
+      });
 
-  describe('getActivePlayers', () => {
-    it('returns active players with game states', async () => {
-      const players = await api.getActivePlayers();
-      expect(players.length).toBeGreaterThan(0);
-      expect(players[0].gameState).toBeDefined();
-      expect(players[0].gameState.snake.length).toBeGreaterThan(0);
+      await api.getLeaderboard('walls');
+
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/leaderboard?mode=walls');
     });
   });
 
   describe('submitScore', () => {
-    it('submits score when logged in', async () => {
-      // Login first
-      await api.login('player1@test.com', 'password123');
-      
-      const result = await api.submitScore(500, 'walls');
-      expect(result).toBe(true);
+    it('submits score to backend', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => true,
+      });
 
-      // Verify score was added
-      const leaderboard = await api.getLeaderboard();
-      const hasScore = leaderboard.some(e => e.score === 500 && e.username === 'SnakeMaster');
-      expect(hasScore).toBe(true);
+      const result = await api.submitScore(1500, 'walls');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/leaderboard',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ score: 1500, mode: 'walls' }),
+        })
+      );
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('getActivePlayers', () => {
+    it('fetches active players', async () => {
+      const mockPlayers = [
+        {
+          id: '101',
+          username: 'Player1',
+          score: 500,
+          mode: 'walls',
+          gameState: {
+            snake: [{ x: 5, y: 5 }],
+            food: { x: 10, y: 10 },
+            direction: 'RIGHT',
+            score: 500,
+            status: 'playing',
+            mode: 'walls',
+            speed: 150,
+          },
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPlayers,
+      });
+
+      const players = await api.getActivePlayers();
+
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/spectator/active');
+      expect(players).toEqual(mockPlayers);
+    });
+  });
+
+  describe('getPlayerGameState', () => {
+    it('fetches specific player game state', async () => {
+      const mockGameState = {
+        snake: [{ x: 5, y: 5 }],
+        food: { x: 10, y: 10 },
+        direction: 'RIGHT',
+        score: 500,
+        status: 'playing',
+        mode: 'walls',
+        speed: 150,
+      };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockGameState,
+      });
+
+      const gameState = await api.getPlayerGameState('101');
+
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/spectator/player/101');
+      expect(gameState).toEqual(mockGameState);
+    });
+
+    it('returns null for 404 response', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      const gameState = await api.getPlayerGameState('nonexistent');
+
+      expect(gameState).toBeNull();
     });
   });
 });

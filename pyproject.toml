@@ -1,0 +1,24 @@
+[project]
+name = "snake-glory-lounge"
+version = "0.1.0"
+description = "Snake Glory Lounge Monorepo"
+requires-python = ">=3.12"
+dependencies = [
+    "backend",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[tool.uv.workspace]
+members = ["backend"]
+
+[tool.uv.sources]
+backend = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
