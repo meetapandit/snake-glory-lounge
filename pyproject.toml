@@ -20,5 +20,6 @@ members = ["backend"]
 backend = { workspace = true }
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests"]
+testpaths = ["backend/tests", "backend/tests_integration"]
 pythonpath = ["backend"]
+
