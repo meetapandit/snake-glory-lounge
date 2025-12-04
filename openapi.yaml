@@ -1,0 +1,308 @@
+openapi: 3.0.0
+info:
+  title: Snake Glory Lounge API
+  version: 1.0.0
+  description: API for the Snake Glory Lounge game
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+paths:
+  /auth/login:
+    post:
+      summary: Login a user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/signup:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Signup successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/logout:
+    post:
+      summary: Logout the current user
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logout successful
+
+  /auth/me:
+    get:
+      summary: Get current user
+      tags: [Auth]
+      responses:
+        '200':
+          description: Current user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated
+
+  /leaderboard:
+    get:
+      summary: Get leaderboard entries
+      tags: [Leaderboard]
+      parameters:
+        - in: query
+          name: mode
+          schema:
+            $ref: '#/components/schemas/GameMode'
+          description: Filter by game mode
+      responses:
+        '200':
+          description: List of leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+    post:
+      summary: Submit a score
+      tags: [Leaderboard]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - score
+                - mode
+              properties:
+                score:
+                  type: number
+                mode:
+                  $ref: '#/components/schemas/GameMode'
+      responses:
+        '200':
+          description: Score submitted successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+
+  /spectator/active:
+    get:
+      summary: Get active players
+      tags: [Spectator]
+      responses:
+        '200':
+          description: List of active players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivePlayer'
+
+  /spectator/player/{playerId}:
+    get:
+      summary: Get specific player game state
+      tags: [Spectator]
+      parameters:
+        - in: path
+          name: playerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player game state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+        '404':
+          description: Player not found
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+      required:
+        - id
+        - username
+        - email
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/User'
+        error:
+          type: string
+      required:
+        - success
+
+    GameMode:
+      type: string
+      enum:
+        - pass-through
+        - walls
+
+    GameStatus:
+      type: string
+      enum:
+        - idle
+        - playing
+        - paused
+        - game-over
+
+    Direction:
+      type: string
+      enum:
+        - UP
+        - DOWN
+        - LEFT
+        - RIGHT
+
+    Position:
+      type: object
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+      required:
+        - x
+        - y
+
+    GameState:
+      type: object
+      properties:
+        snake:
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+        food:
+          $ref: '#/components/schemas/Position'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        score:
+          type: number
+        status:
+          $ref: '#/components/schemas/GameStatus'
+        mode:
+          $ref: '#/components/schemas/GameMode'
+        speed:
+          type: number
+      required:
+        - snake
+        - food
+        - direction
+        - score
+        - status
+        - mode
+        - speed
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        score:
+          type: number
+        mode:
+          $ref: '#/components/schemas/GameMode'
+        date:
+          type: string
+          format: date
+      required:
+        - id
+        - username
+        - score
+        - mode
+        - date
+
+    ActivePlayer:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        score:
+          type: number
+        mode:
+          $ref: '#/components/schemas/GameMode'
+        gameState:
+          $ref: '#/components/schemas/GameState'
+      required:
+        - id
+        - username
+        - score
+        - mode
+        - gameState
