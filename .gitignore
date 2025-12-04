@@ -11,7 +11,7 @@ venv/
 ENV/
 env/
 
-# Database
+# Database files
 *.db
 *.db-journal
 *.db-shm
@@ -36,3 +36,18 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Node modules (frontend)
+node_modules/
+
+# Frontend build
+frontend/dist/
+frontend/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

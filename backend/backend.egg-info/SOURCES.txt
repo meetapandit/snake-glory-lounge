@@ -14,5 +14,6 @@ backend.egg-info/dependency_links.txt
 backend.egg-info/requires.txt
 backend.egg-info/top_level.txt
 tests/test_auth.py
+tests/test_integration.py
 tests/test_leaderboard.py
 tests/test_spectator.py
