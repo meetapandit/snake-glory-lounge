@@ -1,14 +1,10 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: snake-glory-db
-    env: docker
+databases:
+  - name: snake-glory-db
+    databaseName: snake_glory
+    user: snake_user
     plan: free
-    databases:
-      - name: snake_glory
-        databaseName: snake_glory
-        user: snake_user
 
+services:
   # Web Service (Combined Frontend + Backend)
   - type: web
     name: snake-glory-lounge
