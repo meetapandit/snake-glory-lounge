@@ -1,13 +1,28 @@
 def test_get_leaderboard(client):
+    # Seed a score using the API (or DB directly, but API is cleaner integration)
+    signup_data = {"username": "scorer", "email": "scorer@example.com", "password": "password123"}
+    client.post("/auth/signup", json=signup_data)
+    
+    score_data = {"score": 100, "mode": "pass-through"}
+    client.post("/leaderboard", json=score_data)
+
     response = client.get("/leaderboard")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert len(response.json()) > 0
 
 def test_get_leaderboard_filtered(client):
+    # Seed data
+    signup_data = {"username": "scorer", "email": "scorer@example.com", "password": "password123"}
+    client.post("/auth/signup", json=signup_data)
+    
+    client.post("/leaderboard", json={"score": 100, "mode": "walls"})
+    client.post("/leaderboard", json={"score": 200, "mode": "pass-through"})
+
     response = client.get("/leaderboard?mode=walls")
     assert response.status_code == 200
     entries = response.json()
+    assert len(entries) > 0
     assert all(entry["mode"] == "walls" for entry in entries)
 
 def test_submit_score(client):
