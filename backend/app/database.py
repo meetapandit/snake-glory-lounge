@@ -157,6 +157,21 @@ def get_leaderboard(
     return query.order_by(desc(LeaderboardEntryModel.score)).limit(limit).all()
 
 
+def clear_leaderboard(db: Session) -> int:
+    """
+    Clear all leaderboard entries.
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        Number of deleted entries
+    """
+    num_deleted = db.query(LeaderboardEntryModel).delete()
+    db.commit()
+    return num_deleted
+
+
 # ============================================================================
 # Active Player Operations
 # ============================================================================

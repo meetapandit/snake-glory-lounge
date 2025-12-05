@@ -60,3 +60,23 @@ async def submit_score(
     )
     
     return True
+
+
+@router.delete("", response_model=int)
+async def clear_leaderboard_endpoint(
+    user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Clear all leaderboard entries.
+    Only authenticated users can perform this action (for now).
+    
+    Args:
+        user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Number of deleted entries
+    """
+    from app.database import clear_leaderboard
+    return clear_leaderboard(db)

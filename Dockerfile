@@ -28,7 +28,8 @@ RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     nginx \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
 
 # Copy backend requirements and install
 COPY backend/pyproject.toml ./backend/
