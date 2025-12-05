@@ -2,9 +2,10 @@ services:
   - type: web
     name: snake-glory-lounge
     env: docker
+    region: oregon
+    plan: free
     dockerContext: .
     dockerfilePath: ./Dockerfile
-    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,4 +21,4 @@ databases:
     databaseName: snake_glory
     user: snake_user
     plan: free
-    ipAllowList: [] # Allow all IPs
+    ipAllowList: [] # Only allow internal connections
