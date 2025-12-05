@@ -1,14 +1,8 @@
-databases:
-  - name: snake-glory-db
-    databaseName: snake_glory
-    user: snake_user
-    plan: free
-
 services:
-  # Web Service (Combined Frontend + Backend)
   - type: web
     name: snake-glory-lounge
     env: docker
+    dockerContext: .
     dockerfilePath: ./Dockerfile
     plan: free
     envVars:
@@ -19,4 +13,11 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
-        value: false
+        value: "false"
+
+databases:
+  - name: snake-glory-db
+    databaseName: snake_glory
+    user: snake_user
+    plan: free
+    ipAllowList: [] # Allow all IPs
