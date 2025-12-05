@@ -1,56 +1,38 @@
-# Use Python 3.12 slim as base
-FROM python:3.12-slim as builder
-
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-WORKDIR /app
-
-# Install system dependencies (needed for psycopg2)
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements
-COPY backend/pyproject.toml backend/uv.lock ./
-
-
-# Install dependencies
-RUN uv sync --frozen --no-dev
-
 # Frontend build stage
 FROM node:20-alpine as frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend .
+ENV VITE_API_BASE_URL=/api
 RUN npm run build
 
 # Production stage
 FROM python:3.12-slim
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# Set working directory
 WORKDIR /app
 
-# Copy virtual environment from builder
-COPY --from=builder /app/.venv /app/.venv
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy backend and install
+COPY backend/pyproject.toml .
+# Install dependencies directly from pyproject.toml
+RUN pip install --no-cache-dir .
 
 # Copy application code
 COPY backend/app ./app
 
-# Copy frontend build
+# Copy frontend build to static directory
 COPY --from=frontend-builder /frontend/dist ./static
 
 # Set environment variables
-ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
 # Expose port
 EXPOSE 8000
 
-# Run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

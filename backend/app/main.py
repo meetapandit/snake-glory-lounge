@@ -4,6 +4,9 @@ from app.routers import auth, leaderboard, spectator
 from app.db_session import create_tables, SessionLocal
 from app.database import init_db
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 app = FastAPI(
     title="Snake Glory Lounge API",
     description="API for the Snake Glory Lounge game",
@@ -20,9 +23,9 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router)
-app.include_router(leaderboard.router)
-app.include_router(spectator.router)
+app.include_router(auth.router, prefix="/api")
+app.include_router(leaderboard.router, prefix="/api")
+app.include_router(spectator.router, prefix="/api")
 
 
 @app.on_event("startup")
@@ -39,7 +42,8 @@ async def startup_event():
         db.close()
 
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to Snake Glory Lounge API"}
+# Mount static files correctly
+if os.path.exists("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
 
