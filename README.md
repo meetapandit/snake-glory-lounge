@@ -2,6 +2,7 @@
 
 A full-stack Snake game with leaderboards and spectator mode.
 
+## Access the app online on render here: https://snake-glory-lounge.onrender.com
 ## Quick Start
 
 Run both frontend and backend together:
